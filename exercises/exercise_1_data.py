@@ -11,9 +11,8 @@ Each level builds on the previous one.
 
 Run: python exercises/exercise_1_data.py
 """
-
+import csv
 from pathlib import Path
-
 
 DATA_PATH = Path(__file__).parent.parent / "data" / "support_tickets.csv"
 OUTPUT_PATH = Path(__file__).parent.parent / "output"
@@ -32,7 +31,12 @@ def load_csv_manual(filepath: str) -> list[dict]:
     Example: [{"ticket_id": "1", "title": "Login issue", ...}, ...]
     """
     # TODO: Implement using open() and csv module or manual parsing
-    pass
+    rows = []
+    with open(filepath, mode='r', newline='', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            rows.append(row)
+    return rows
 
 
 def count_by_status(rows: list[dict]) -> dict:
@@ -41,7 +45,11 @@ def count_by_status(rows: list[dict]) -> dict:
     Return a dict like: {"open": 12, "resolved": 23}
     """
     # TODO: Implement this function
-    pass
+    count = {}
+    for row in rows:
+        status = row.get('status', 'unknown')
+        count[status] = count.get(status, 0) + 1
+    return count
 
 
 def filter_by_priority(rows: list[dict], priority: str) -> list[dict]:
@@ -50,7 +58,12 @@ def filter_by_priority(rows: list[dict], priority: str) -> list[dict]:
     Example: filter_by_priority(rows, "high") returns all high-priority tickets.
     """
     # TODO: Implement this function
-    pass
+    res = []
+    for row in rows:
+        row_priority = row.get('priority', "")
+        if row_priority.lower() == priority.lower():
+            res.append(row)
+    return res
 
 
 def find_missing_descriptions(rows: list[dict]) -> list[str]:
@@ -58,8 +71,12 @@ def find_missing_descriptions(rows: list[dict]) -> list[str]:
     Return ticket_ids where 'description' is empty or missing.
     """
     # TODO: Implement this function
-    pass
-
+    missing = []
+    for row in rows:
+        description = row.get('description', "")
+        if not description:
+            missing.append(row.get('ticket_id'))
+    return missing
 
 # ============================================================
 # STANDARD LEVEL — Pandas-based analysis
@@ -69,7 +86,8 @@ def load_data(filepath: str):
     """Load the CSV file and return a pandas DataFrame."""
     import pandas as pd
     # TODO: Implement this function
-    pass
+    df = pd.read_csv(filepath)
+    return df
 
 
 def clean_data(df):
@@ -82,13 +100,19 @@ def clean_data(df):
     Return the cleaned DataFrame.
     """
     # TODO: Implement this function
-    pass
+    import pandas as pd
+    df = df[df["description"].notnull()]
+    df = df[df["description"].str.strip() != ""]
+    df['priority'] = df['priority'].str.lower()
+    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
+    return df
 
 
 def tickets_per_month(df) -> dict:
     """Return the number of tickets created per month (as a dict or Series)."""
     # TODO: Implement this function
-    pass
+    monthly_tickets = df.groupby(df['created_at'].dt.to_period('M')).size()
+    return monthly_tickets.to_dict()
 
 
 def avg_resolution_time_by_priority(df) -> dict:
@@ -97,13 +121,23 @@ def avg_resolution_time_by_priority(df) -> dict:
     Resolution time = resolved_at - created_at
     """
     # TODO: Implement this function
-    pass
+    import pandas as pd
+    df["resolved_at"] = pd.to_datetime(df["resolved_at"], errors="coerce")
+
+    df["resolution_hours"] = (df["resolved_at"] - df["created_at"]).dt.total_seconds() / 3600
+
+    result = df.groupby("priority")["resolution_hours"].mean()
+
+    return result.to_dict()
 
 
 def highest_unresolved_category(df) -> str:
     """Return the category with the highest percentage of unresolved tickets."""
     # TODO: Implement this function
-    pass
+    total = df.groupby("category").size()
+    unresolved = df[df["status"] == "open"].groupby("category").size()
+    percentage = (unresolved / total) * 100
+    return percentage.idxmax()
 
 
 # ============================================================

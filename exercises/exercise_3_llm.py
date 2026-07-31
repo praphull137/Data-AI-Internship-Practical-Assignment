@@ -50,7 +50,8 @@ def summarize_text(text: str) -> str:
     Just call the LLM with a clear prompt and return the response.
     """
     # TODO: Write a prompt and call call_llm()
-    pass
+    prompt = f"Summarize the following text in 2-3 sentences:\n\n{text}"
+    return call_llm(prompt)
 
 
 def classify_sentiment(text: str) -> str:
@@ -59,7 +60,14 @@ def classify_sentiment(text: str) -> str:
     Return one of: "positive", "neutral", "negative"
     """
     # TODO: Write a prompt that returns only one word
-    pass
+    prompt = (
+        "Classify the sentiment of the following text as exactly one word: "
+        "positive, neutral, or negative. Reply with only that one word, "
+        "nothing else.\n\n"
+        f"Text: {text}"
+    )
+    response = call_llm(prompt)
+    return response.strip().lower()
 
 
 def ask_question(text: str, question: str) -> str:
@@ -68,7 +76,13 @@ def ask_question(text: str, question: str) -> str:
     based only on the information in the text.
     """
     # TODO: Implement basic Q&A with context
-    pass
+    prompt = (
+        "Answer the question using only the information in the text below. "
+        "If the answer is not in the text, say 'Not mentioned in the text.'\n\n"
+        f"Text: {text}\n\n"
+        f"Question: {question}"
+    )
+    return call_llm(prompt)
 
 
 # ============================================================

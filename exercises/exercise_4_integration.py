@@ -22,7 +22,6 @@ from utils import call_llm  # noqa: configured in utils/llm_client.py
 DOCUMENTS_PATH = Path(__file__).parent.parent / "data" / "documents"
 OUTPUT_PATH = Path(__file__).parent.parent / "output"
 
-
 # ============================================================
 # BASE LEVEL — File I/O and text processing (no LLM needed)
 # ============================================================
@@ -33,13 +32,18 @@ def read_documents(folder: Path) -> list[dict]:
     Return a list of dicts: [{"filename": str, "content": str}, ...]
     """
     # TODO: Implement this function
-    pass
+    documents = []
+    for file_path in sorted(folder.glob("*.txt")):
+        content = file_path.read_text(encoding="utf-8")
+        documents.append({"filename": file_path.name, "content": content})
+    return documents
 
 
 def word_count(text: str) -> int:
     """Return the number of words in a text."""
     # TODO: Implement this function
-    pass
+    words = text.split()
+    return len(words)
 
 
 def extract_keywords_simple(text: str, top_n: int = 5) -> list[str]:
@@ -49,7 +53,18 @@ def extract_keywords_simple(text: str, top_n: int = 5) -> list[str]:
     Return as a list of lowercase words.
     """
     # TODO: Implement without LLM — use word frequency
-    pass
+    stop_words = {"the", "a", "is", "in", "of", "and", "to", "for",
+                  "on", "with", "as", "by", "an", "at", "from", "that", 
+                  "this", "it", "be", "are", "or", "but", "not", "was", "were",
+                  "which", "their", "has", "have", "had"}
+    words = text.lower().split()
+    cleaned_words = [w.strip(".,!?;:\"'()") for w in words]
+    meaningful_words = [
+        w for w in cleaned_words if w and w not in stop_words and len(w) > 2
+    ]
+    counts = Counter(meaningful_words)
+    top_words = [word for word, count in counts.most_common(top_n)]
+    return top_words
 
 
 def basic_stats(documents: list[dict]) -> dict:
@@ -62,7 +77,24 @@ def basic_stats(documents: list[dict]) -> dict:
     - longest_doc: str (filename)
     """
     # TODO: Implement this function
-    pass
+    if not documents:
+        return {}
+ 
+    word_counts = [(doc["filename"], word_count(doc["content"])) for doc in documents]
+    total_words = sum(count for _, count in word_counts)
+    total_documents = len(documents)
+    avg_words = total_words / total_documents
+ 
+    shortest = min(word_counts, key=lambda x: x[1])
+    longest = max(word_counts, key=lambda x: x[1])
+ 
+    return {
+        "total_documents": total_documents,
+        "total_words": total_words,
+        "avg_words_per_doc": avg_words,
+        "shortest_doc": shortest[0],
+        "longest_doc": longest[0],
+    }
 
 
 # ============================================================
